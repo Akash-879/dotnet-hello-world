@@ -13,7 +13,7 @@ pipeline {
     stages {
         stage('Clone Repository') {
             steps {
-                git 'https://github.com/akash-879/dotnet-hello-world'
+                git url: 'https://github.com/akash-879/dotnet-hello-world' branch: 'master'
             }
         }
         stage('Build Docker Image') {
