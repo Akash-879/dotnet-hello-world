@@ -15,7 +15,7 @@ pipeline {
         stage('Clone Repository') {
             steps {
                 // Pulling the code from GitHub repository
-                git url: 'https://github.com/akash-879/dotnet-hello-world', branch: 'master'
+                sh 'git clone https://github.com/akash-879/dotnet-hello-world'
             }
         }
         stage('Build Docker Image') {
