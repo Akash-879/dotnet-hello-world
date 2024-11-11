@@ -15,7 +15,7 @@ pipeline {
         stage('Clone Repository') {
             steps {
                 // Pulling the code from GitHub repository
-                sh 'git clone https://github.com/akash-879/dotnet-hello-world'
+                git url: 'https://github.com/akash-879/dotnet-hello-world', branch: 'master'
             }
         }
         stage('Build Docker Image') {
@@ -38,7 +38,7 @@ pipeline {
                         docker pull ${env.DOCKER_HUB_REPO}:latest // Pull the latest image from Docker Hub
                         docker stop hello-world-api || true // Stop any running container with the same name
                         docker rm hello-world-api || true // Remove the container if it exists
-                        docker run -d -p 80:80 --name hello-world-api ${env.DOCKER_HUB_REPO}:latest // Run the new container
+                        docker run -d -p 5000:5000 --name hello-world-api ${env.DOCKER_HUB_REPO}:latest // Run the new container
                     EOF
                     """
                 }
