@@ -1,63 +1,53 @@
 pipeline {
     agent any
-
     environment {
-        // Define Docker Hub and AWS credentials as global variables in Jenkins
+        DOCKER_HUB_REPO = 'akash879/hello-world-api'
+        AWS_EC2_IP = '13.48.249.214'
+        SSH_KEY = credentials('sss-credentials')
         DOCKER_HUB_CREDENTIALS = credentials('docker-credentials')
         AWS_CREDENTIALS = credentials('aws-credentials')
-        // Use environment-specific EC2 details
-        EC2_IP_UAT = "uat-instance-ip"
-        EC2_IP_PROD = "prod-instance-ip"
-        DOCKER_IMAGE = "akash879/hello-world-api"
     }
-
     parameters {
-        choice(name: 'ENVIRONMENT', choices: ['UAT', 'PRODUCTION'], description: 'Choose deployment environment')
+        string(name: 'UAT_EC2_IP', defaultValue: '', description: 'UAT EC2 instance IP')
     }
-
     stages {
         stage('Clone Repository') {
             steps {
-                git url: 'https://github.com/Akash-879/dotnet-hello-world', branch: 'master'
+                git 'https://github.com/akash-879/dotnet-hello-world'
             }
         }
-
         stage('Build Docker Image') {
             steps {
                 script {
-                    docker.build("${DOCKER_IMAGE}:${params.ENVIRONMENT.toLowerCase()}")
-                }
-            }
-        }
-
-        stage('Push to Docker Hub') {
-            steps {
-                script {
-                    docker.withRegistry('', "${DOCKER_HUB_CREDENTIALS}") {
-                        docker.image("${DOCKER_IMAGE}:${params.ENVIRONMENT.toLowerCase()}").push()
+                    docker.withRegistry('', 'DOCKER_HUB_CREDENTIALS') {
+                        def appImage = docker.build("${env.DOCKER_HUB_REPO}:latest")
+                        appImage.push()
                     }
                 }
             }
         }
-
-        stage('Deploy to AWS EC2') {
+        stage('Deploy to EC2') {
             steps {
                 script {
-                    def ec2Ip = params.ENVIRONMENT == 'UAT' ? EC2_IP_UAT : EC2_IP_PROD
+                    // SSH to EC2 and run Docker commands to pull and run the image
                     sh """
-                    ssh -o StrictHostKeyChecking=no -i /path/to/your/aws-key.pem ubuntu@${ec2Ip} << EOF
-                        docker pull ${DOCKER_IMAGE}:${params.ENVIRONMENT.toLowerCase()}
-                        docker run -d -p 5000:5000 ${DOCKER_IMAGE}:${params.ENVIRONMENT.toLowerCase()}
+                    ssh -i ${SSH_KEY} ubuntu@${AWS_EC2_IP} << EOF
+                        docker pull ${env.DOCKER_HUB_REPO}:latest
+                        docker stop hello-world-api || true
+                        docker rm hello-world-api || true
+                        docker run -d -p 80:80 --name hello-world-api ${env.DOCKER_HUB_REPO}:latest
                     EOF
                     """
                 }
             }
         }
     }
-
     post {
-        always {
-            cleanWs()
+        success {
+            echo "Deployment successful!"
+        }
+        failure {
+            echo "Deployment failed!"
         }
     }
 }
