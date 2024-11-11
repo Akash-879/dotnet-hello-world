@@ -47,7 +47,7 @@ pipeline {
                     sh """
                     ssh -o StrictHostKeyChecking=no -i /path/to/your/aws-key.pem ubuntu@${ec2Ip} << EOF
                         docker pull ${DOCKER_IMAGE}:${params.ENVIRONMENT.toLowerCase()}
-                        docker run -d -p 80:80 ${DOCKER_IMAGE}:${params.ENVIRONMENT.toLowerCase()}
+                        docker run -d -p 5000:5000 ${DOCKER_IMAGE}:${params.ENVIRONMENT.toLowerCase()}
                     EOF
                     """
                 }
